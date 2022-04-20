@@ -7,11 +7,10 @@ import com.example.model.TacoOrder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -60,7 +59,7 @@ public class DesignTacoController {
     // this, like the taco() method above returns a TacoOrder instance however, with the @SessionAttribute above
     // holds the state for the order across multiple requests.
     @ModelAttribute(name = "tacoOrder")
-    public TacoOrder tacoOrder() {
+    public TacoOrder order() {
         return new TacoOrder();
     }
 
@@ -70,6 +69,38 @@ public class DesignTacoController {
     // logical name of the view which will be used to render the model to the browser
     @GetMapping
     public String showDesignForm() { return "design"; }
+
+    // as with the @GetMapping @PostMapping handles POST requests with "/design" as the path.  It too works with
+    // the @RequestMapping annotation
+    /*
+        there is a lot going on with the POST request that bears explanation.  First, when the form is
+        submitted all fields in the form are bound to the taco object.  "Which Taco object?" one might ask.  It
+        is the taco object delivered by the public Taco taco() method, which returns a new taco object.  Here by
+        way of method parameters, Spring is autowiring a relationship between the two methods.  When used as a
+        method annotation, @ModelAttribute adds an attribute to the model and ties it to a name, "taco" in this
+        case.  So before any controller actions take place, all the @ModelAttribute methods are run first so
+        the model can be declared and initialized before the controllers act on them.  It is important to note
+        that @ModelAttribute was used on one of the parameters in processTaco -> @ModelAttribute TacoOrder tacoOrder.
+        We saw previously how the @ModelAttribute was used to annotate a method, here it is used to annotate a
+        method parameter.  In this case it tells Spring to retrieve the tacoOrder object placed into the model
+        via the public TacoOrder order() method which was annotated with @ModelAttribute(name = "tacoOrder").
+    */
+    /*
+        Before the processTaco method is called @Valid ensures validation has been run on the design form, once
+        the validation is run, then the errors object will be populated.  If there are any errors then the hasErrors()
+        method will be true and the form will be loaded again.
+    */
+    @PostMapping
+    public String processTaco(
+            @Valid Taco taco, Errors errors,
+            @ModelAttribute TacoOrder tacoOrder) {
+        if (errors.hasErrors()) return "design";
+
+        tacoOrder.addTaco(taco);
+        log.info("Processing taco: {}", taco);
+
+        return "redirect:/orders/current";
+    }
 
     // if I am not mistaken what this code does is to produce a list of ingredients for each ingredient type.  For
     // instance under the model attribute "wraps" there should be two ingredients: a Flour Tortilla and a Corn
