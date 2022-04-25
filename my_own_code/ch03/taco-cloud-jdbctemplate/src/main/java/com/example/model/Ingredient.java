@@ -14,5 +14,5 @@ public class Ingredient {
     private String name;
     private Type type;
 
-    private enum Type {WRAP, PROTEIN, VEGGIES, CHEESE, SAUCE}
+    public enum Type {WRAP, PROTEIN, VEGGIES, CHEESE, SAUCE}
 }
